@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      TZ: ${TZ:-Asia/Tokyo}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - kuon-db-data:/var/lib/postgresql
+
+  kuon:
+    image: ghcr.io/kuon-org/kuon:${KUON_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      SERVER_PORT: ${SERVER_PORT:-9040}
+      APP_SITE_URL: ${APP_SITE_URL:-http://localhost:9040}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      TZ: ${TZ:-Asia/Tokyo}
+    ports:
+      - "${SERVER_PORT:-9040}:${SERVER_PORT:-9040}"
+    volumes:
+      - kuon-uploads:/app/public/uploads
+
+volumes:
+  kuon-db-data:
+  kuon-uploads:
