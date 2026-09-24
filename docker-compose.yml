@@ -15,6 +15,7 @@ services:
       start_period: 10s
     volumes:
       - kuon-db-data:/var/lib/postgresql
+      - ./database/migrations/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
 
   kuon:
     image: ghcr.io/kuon-org/kuon:${KUON_IMAGE_TAG:-latest}
